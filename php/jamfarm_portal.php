@@ -7,16 +7,17 @@ include_once "ninjam.class.php";
 
 ## REQUEST PATTERNS:
 #
-# * jamfarmportal.php
-# * jamfarmportal.php?async=0 (default=1)
-# * jamfarmportal.php/test.ninjam.com:2050 (synced)
+# * jamfarm_portal.php (index)
+# * jamfarm_portal.php/test.ninjam.com:2050
 #
 
 ## Manage Interface:
 #
 # * /register
-# * /available/$server/[01]
-#
+# * /enable/$server/[01]
+# * /disable/
+# * /add/
+# * /del/
 
 ## RETURN VALUE:
 #
@@ -51,5 +52,4 @@ include_once "ninjam.class.php";
 
 # TODO: stream_select for async
 
-
-
+# TODO: OpenID

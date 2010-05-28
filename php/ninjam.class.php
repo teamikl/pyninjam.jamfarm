@@ -99,13 +99,16 @@ class Message
     }
 }
 
+
+# TODO: use PHP stream and StreamWrapper
+
 class NinjamConnection
 {
     var $timeout = 10;
 
     function __construct()
     {
-        $socket = null;
+        $this->socket = null;
     }
 
     function connect($host, $port)
@@ -209,8 +212,8 @@ class NinjamAgent
         while (! $str->is_empty())
         {
             $str->read(6);
-            $username = $str->next();
-            $channel = $str->next();
+            $username = utf8_encode($str->next());
+            $channel = utf8_encode($str->next());
 
             if (! array_key_exists($username, $users))
             {
@@ -239,7 +242,7 @@ class NinjamAgent
                 $tmp = explode("\x00", $msg->chunk);
                 if ($tmp[0] == 'TOPIC')
                 {
-                    $topic = $tmp[2];
+                    $topic = utf8_encode($tmp[2]);
                 }
                 break;
             case MESSAGE_SERVER_AUTH_REPLY:
