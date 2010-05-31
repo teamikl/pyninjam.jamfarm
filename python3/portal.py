@@ -155,6 +155,11 @@ class Model(object):
 
 ##############################################################################
 
+import string
+import random
+
+def _gen_password(length=8, letters=string.letters):
+    return ''.join(random.choice(letters) for x in range(length))
 
 
 ##############################################################################
@@ -176,9 +181,27 @@ URL MAPPING:
 
 """
 
-class Site(dict):
-    def __init__(self, model):
-        self.model = model
+def _dict2tuple(data, **kw):
+    return ((x,data[x]) for x in sorted(data, **kw))
+
+def notfound(environ, start_response):
+    start_response('404 Not Found', [('Content-Type','text/plain')])
+    return 'Not found'
+
+class URIMapping(object):
+    def __init__(self, mapping, notfound=notfound):
+        self.mapping = list(_dict2tuple(mapping, key=len, reverse=True))
+        self.notfound = notfound
+
+    def __call__(self, environ, start_response):
+        path_info = environ['PATH_INFO']
+        
+        for path,app in self.mapping:
+            if path_info.startswith(path) and path_info[len(path)] == '/':
+                environ['PATH_INFO'] = path_info[len(path):]
+                return app(environ, start_response)
+        else:
+            return self.notfound(environ, start_response)
 
 
 class JamFarmPortal(object):
@@ -191,6 +214,8 @@ class JamFarmPortal(object):
         request_method = environ.get('REQUEST_METHOD', None)
         if request_method == 'GET':
             # TODO
+            start_response('200 Ok', [('Content-Type','text/html')])
+            return "OK"
             pass
         elif request_method == 'POST':
             # TODO
@@ -201,6 +226,22 @@ class JamFarmPortal(object):
 
 
 ##############################################################################
+
+def test():
+    for i in range(10):
+        print(_gen_password())
+
+
+def test_sv():
+    from wsgiref.simple_server import make_server
+    
+    try:
+        # TODO
+        app = JamFarmPortal(None, None)
+        server = make_server('', 8000, app)
+        server.serve_forever()
+    except KeyboardInterrupt:
+        server.shutdown()
 
 
 def test_db():
@@ -232,7 +273,7 @@ def test_db():
 ##############################################################################
 
 def main(*argv):
-    test_db()
+    test()
 
 ##############################################################################
 if __name__ == '__main__':
