@@ -184,14 +184,22 @@ URL MAPPING:
 def _dict2tuple(data, **kw):
     return ((x,data[x]) for x in sorted(data, **kw))
 
-def notfound(environ, start_response):
+def _notfound(environ, start_response):
     start_response('404 Not Found', [('Content-Type','text/plain')])
     return 'Not found'
 
+def _notimplemented(environ, start_response):
+    start_response('501 NotImplemented', [('Content-Type','text/plain')])
+    return 'Not Implemented'
+
+class HTTPErrorResponse(Exception):
+    def __init__(self, status, reason=''):
+        self.status = status
+        self.reason = reason
+
 class URIMapping(object):
-    def __init__(self, mapping, notfound=notfound):
+    def __init__(self, mapping):
         self.mapping = list(_dict2tuple(mapping, key=len, reverse=True))
-        self.notfound = notfound
 
     def __call__(self, environ, start_response):
         path_info = environ['PATH_INFO']
@@ -201,29 +209,35 @@ class URIMapping(object):
                 environ['PATH_INFO'] = path_info[len(path):]
                 return app(environ, start_response)
         else:
-            return self.notfound(environ, start_response)
+            raise HTTPErrorResponse(404)
 
+class Site(object):
 
-class JamFarmPortal(object):
+    error_handlers = {
+        404: _notfound,
+        500: _notimplemented,
+    }
 
-    def __init__(self, site, config):
-        self.site = site
-        self.config = config
+    def __init__(self, get, post):
+        self.get = post
+        self.post = post
 
     def __call__(self, environ, start_response):
-        request_method = environ.get('REQUEST_METHOD', None)
-        if request_method == 'GET':
-            # TODO
-            start_response('200 Ok', [('Content-Type','text/html')])
-            return "OK"
-            pass
-        elif request_method == 'POST':
-            # TODO
-            pass
-        else:
-            start_response('501 NotImplemented', [('Content-Type','text/plain')])
-            return 'Not Implemented'
+        try:
+            request_method = environ.get('REQUEST_METHOD', None)
+            if request_method == 'GET':
+                return self.site.get(environ, start_response)
+            elif request_method == 'POST':
+                return self.site.post(environ, start_response)
+            else:
+                raise HTTPErrorResponse(500)
+        except HTTPErrorResponse, e:
+            handler = self.error_handlers.get(e.status, _notimplemented)
+            environ['_EXCEPTION'] = e.reason
+            return handler(environ, start_response)
 
+class JamFarmPortal(Site):
+    pass
 
 ##############################################################################
 
@@ -236,8 +250,7 @@ def test_sv():
     from wsgiref.simple_server import make_server
     
     try:
-        # TODO
-        app = JamFarmPortal(None, None)
+        app = JamFarmPortal()
         server = make_server('', 8000, app)
         server.serve_forever()
     except KeyboardInterrupt:
