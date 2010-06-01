@@ -207,8 +207,8 @@ class URIMapping(object):
         
         for path,app in self.mapping:
             if path_info.startswith(path):
-                if path_info[len(path)] == '/':
-                    environ['PATH_INFO'] = path_info[len(path):]
+                if path.endswith('/') and path_info[len(path)-1] == '/':
+                    environ['PATH_INFO'] = path_info[len(path)-1:]
                 return app(environ, start_response)
         else:
             raise HTTPErrorResponse(404)
@@ -337,7 +337,7 @@ def test_sv():
             '/server/update_info': site.server.update_info,
         })
         post_mapping = URIMapping({
-            '/static': site.static,
+            '/static/': site.static,
             '/json/server_list': site.json.server_list,
             '/json/server_info': site.json.server_info,
         })
@@ -378,7 +378,13 @@ def test_db():
 ##############################################################################
 
 def main(*argv):
-    test_sv()
+    # TEST CODE:
+    if "test" in argv:
+        test()
+    elif "server" in argv:
+        test_sv()
+    elif "model" in argv:
+        test_db()
 
 ##############################################################################
 if __name__ == '__main__':
