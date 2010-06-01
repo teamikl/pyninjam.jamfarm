@@ -310,6 +310,13 @@ class StaticContent(ContentBase):
         response.start('200 Ok', [('Content-Type', 'text/plain')])
         yield "OK"
 
+class SiteContainer(object):
+    def __init__(self, model):
+        self.json = JSONContent(model)
+        self.user = UserContent(model)
+        self.server = ServerContent(model)
+        self.static = StaticContent(model)
+
 ##############################################################################
 
 def test():
@@ -320,23 +327,19 @@ def test_sv():
     from wsgiref.simple_server import make_server
     
     try:
-        model = Model(Database(':memory:'))
-        json_content = JSONContent(model)
-        user_content = UserContent(model)
-        server_content = ServerContent(model)
-        static_content = StaticContent(model)
+        site = SiteContainer(Model(Database(':memory:')))
         
         get_mapping = URIMapping({
-            '/user/register': user_content.register,
-            '/user/login': user_content.login,
-            '/user/change_password': user_content.change_password,
-            '/server/register': server_content.register,
-            '/server/update_info': server_content.update_info,
+            '/user/register': site.user.register,
+            '/user/login': site.user.login,
+            '/user/change_password': site.user.change_password,
+            '/server/register': site.server.register,
+            '/server/update_info': site.server.update_info,
         })
         post_mapping = URIMapping({
-            '/static': static_content,
-            '/json/server_list': json_content.server_list,
-            '/json/server_info': json_content.server_info,
+            '/static': site.static,
+            '/json/server_list': site.json.server_list,
+            '/json/server_info': site.json.server_info,
         })
         
         app = JamFarmPortal(get_mapping, post_mapping)
