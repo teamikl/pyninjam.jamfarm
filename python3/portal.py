@@ -161,7 +161,6 @@ import random
 def _gen_password(length=8, letters=string.letters):
     return ''.join(random.choice(letters) for x in range(length))
 
-
 ##############################################################################
 
 """
@@ -198,6 +197,8 @@ class HTTPErrorResponse(Exception):
         self.reason = reason
 
 class URIMapping(object):
+    # WSGI URI Mapping middle-ware
+
     def __init__(self, mapping):
         self.mapping = list(_dict2tuple(mapping, key=len, reverse=True))
 
@@ -205,14 +206,16 @@ class URIMapping(object):
         path_info = environ['PATH_INFO']
         
         for path,app in self.mapping:
-            if path_info.startswith(path) and path_info[len(path)] == '/':
-                environ['PATH_INFO'] = path_info[len(path):]
+            if path_info.startswith(path):
+                if path_info[len(path)] == '/':
+                    environ['PATH_INFO'] = path_info[len(path):]
                 return app(environ, start_response)
         else:
             raise HTTPErrorResponse(404)
 
 class Site(object):
-
+    # WSGI application base
+    
     error_handlers = {
         404: _notfound,
         500: _notimplemented,
@@ -225,10 +228,13 @@ class Site(object):
     def __call__(self, environ, start_response):
         try:
             request_method = environ.get('REQUEST_METHOD', None)
+            request = HTTPRequest(environ)
+            response = HTTPResponse(start_response)
+            
             if request_method == 'GET':
-                return self.site.get(environ, start_response)
+                return self.get(environ, start_response)
             elif request_method == 'POST':
-                return self.site.post(environ, start_response)
+                return self.post(environ, start_response)
             else:
                 raise HTTPErrorResponse(500)
         except HTTPErrorResponse, e:
@@ -241,16 +247,99 @@ class JamFarmPortal(Site):
 
 ##############################################################################
 
+class HTTPRequest(object):
+    def __init__(self, environ):
+        self.environ = environ
+        
+class HTTPResponse(object):
+    # TODO: call/cc ?
+    def __init__(self, start_response):
+        self.start = start_response
+
+# Transform WSGI method call (environ, start_response) -> (request, response)
+def content_handler(func):
+    import functools
+    @functools.wraps(func)
+    def _wrapped(self, environ, start_response):
+        request = HTTPRequest(environ)
+        response = HTTPResponse(start_response)
+        return func(self, request, response)
+    return _wrapped
+
+class ContentBase(object):
+    def __init__(self, model):
+        self.model = model
+
+##############################################################################
+# Implements Application
+
+class UserContent(ContentBase):
+    @content_handler
+    def register(self, request, response):
+        pass
+        
+    @content_handler
+    def login(self, request, response):
+        pass
+        
+    @content_handler
+    def change_password(self, request, response):
+        pass
+
+class ServerContent(ContentBase):
+    @content_handler
+    def register(self, request, response):
+        pass
+        
+    @content_handler
+    def update_info(self, request, response):
+        pass
+
+class JSONContent(ContentBase):
+    @content_handler
+    def server_list(self, request, response):
+        pass
+        
+    @content_handler
+    def server_info(self, request, response):
+        pass
+
+class StaticContent(ContentBase):
+    @content_handler
+    def __call__(self, request, response):
+        response.start('200 Ok', [('Content-Type', 'text/plain')])
+        yield "OK"
+
+##############################################################################
+
 def test():
     for i in range(10):
         print(_gen_password())
-
 
 def test_sv():
     from wsgiref.simple_server import make_server
     
     try:
-        app = JamFarmPortal()
+        model = Model(Database(':memory:'))
+        json_content = JSONContent(model)
+        user_content = UserContent(model)
+        server_content = ServerContent(model)
+        static_content = StaticContent(model)
+        
+        get_mapping = URIMapping({
+            '/user/register': user_content.register,
+            '/user/login': user_content.login,
+            '/user/change_password': user_content.change_password,
+            '/server/register': server_content.register,
+            '/server/update_info': server_content.update_info,
+        })
+        post_mapping = URIMapping({
+            '/static': static_content,
+            '/json/server_list': json_content.server_list,
+            '/json/server_info': json_content.server_info,
+        })
+        
+        app = JamFarmPortal(get_mapping, post_mapping)
         server = make_server('', 8000, app)
         server.serve_forever()
     except KeyboardInterrupt:
@@ -286,7 +375,7 @@ def test_db():
 ##############################################################################
 
 def main(*argv):
-    test()
+    test_sv()
 
 ##############################################################################
 if __name__ == '__main__':
