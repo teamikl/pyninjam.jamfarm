@@ -174,7 +174,7 @@ URL MAPPING:
         /server/update_info
     
     GET:
-        /
+        /static/
         /json/server_list
         /json/server_info/$address
 
