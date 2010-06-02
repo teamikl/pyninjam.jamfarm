@@ -222,7 +222,7 @@ class Site(object):
     }
 
     def __init__(self, get, post):
-        self.get = post
+        self.get = get
         self.post = post
 
     def __call__(self, environ, start_response):
@@ -330,16 +330,16 @@ def test_sv():
         site = SiteContainer(Model(Database(':memory:')))
         
         get_mapping = URIMapping({
+            '/static/': site.static,
+            '/json/server_list': site.json.server_list,
+            '/json/server_info': site.json.server_info,
+        })
+        post_mapping = URIMapping({
             '/user/register': site.user.register,
             '/user/login': site.user.login,
             '/user/change_password': site.user.change_password,
             '/server/register': site.server.register,
             '/server/update_info': site.server.update_info,
-        })
-        post_mapping = URIMapping({
-            '/static/': site.static,
-            '/json/server_list': site.json.server_list,
-            '/json/server_info': site.json.server_info,
         })
         
         app = JamFarmPortal(get_mapping, post_mapping)
