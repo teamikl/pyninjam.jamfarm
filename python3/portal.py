@@ -2,6 +2,7 @@
 
 ##############################################################################
 
+# TODO: read ../model/portal.sql
 SQL_CREATE_TABLE = """
 
     CREATE TABLE user_table (
