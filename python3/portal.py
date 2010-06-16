@@ -342,9 +342,9 @@ class TemplateFactory(object):
             return lambda self_,req,res: template.render(**func(self_,req,res))
         return _func
 
+# TODO: set directories from config
 from mako.lookup import TemplateLookup
 template = TemplateFactory(TemplateLookup, './templates')
-
 
 ##############################################################################
 # Implements Application
@@ -456,7 +456,7 @@ def build_app(**config):
 
 ##############################################################################
 
-def init_app_with_config(ini_file):
+def init_app_with_config(inifile):
     config = load_config(inifile) if os.path.isfile(inifile) else {}
     return build_app(**config)
 
