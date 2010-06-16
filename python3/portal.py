@@ -184,6 +184,10 @@ URL MAPPING:
 def _dict2tuple(data, **kw):
     return ((x,data[x]) for x in sorted(data, **kw))
 
+def _unauth(environ, start_response):
+    start_response('401 Unauthorized', [('Content-Type','text/plain')])
+    return 'Unauthorized'
+
 def _notfound(environ, start_response):
     start_response('404 Not Found', [('Content-Type','text/plain')])
     return 'Not found'
@@ -214,10 +218,12 @@ class URIMapping(object):
         else:
             raise HTTPErrorResponse(404)
 
+
 class Site(object):
     # WSGI application base
     
     error_handlers = {
+        401: _unauth,
         404: _notfound,
         500: _notimplemented,
     }
@@ -241,7 +247,7 @@ class Site(object):
         except HTTPErrorResponse, e:
             handler = self.error_handlers.get(e.status, _notimplemented)
             environ['_EXCEPTION'] = e.reason
-            return handler(environ, start_response)
+            return [handler(environ, start_response)]
 
 class JamFarmPortal(Site):
     pass
@@ -270,6 +276,39 @@ def content_handler(func):
 class ContentBase(object):
     def __init__(self, model):
         self.model = model
+
+
+##############################################################################
+# Request
+
+class require_auth(object):
+    __name__ = 'require_auth'
+
+    def __init__(self, func):
+        self.func = func
+        
+    def __call__(self, self_, request, response):
+        if not hasattr(request,'auth') or not request.auth:
+            raise HTTPErrorResponse(401)
+        return self.func(self_, request, response)
+
+
+##############################################################################
+# Response
+
+class TemplateFactory(object):
+    def __init__(self, factory, srcdir):
+        self.factory = factory(directories=srcdir)
+
+    def render(self, name):
+        template = self.factory.get_template(name)
+        def _func(func):
+            return lambda self,request,response: template.render(**func(self,request,response))
+        return _func
+
+from mako.lookup import TemplateLookup
+template = TemplateFactory(TemplateLookup, './templates')
+
 
 ##############################################################################
 # Implements Application
@@ -311,12 +350,22 @@ class StaticContent(ContentBase):
         response.start('200 Ok', [('Content-Type', 'text/plain')])
         yield "OK"
 
+class IndexContent(ContentBase):
+    @content_handler
+    @template.render('index.html')
+    def __call__(self, request, response):
+        response.start('200 Ok', [('Content-Type', 'text/html')])
+        return {
+            'title': 'Index page',
+        }
+
 class SiteContainer(object):
     def __init__(self, model):
         self.json = JSONContent(model)
         self.user = UserContent(model)
         self.server = ServerContent(model)
         self.static = StaticContent(model)
+        self.index = IndexContent(model)
 
 ##############################################################################
 
@@ -331,6 +380,7 @@ def test_sv():
         site = SiteContainer(Model(Database(':memory:')))
         
         get_mapping = URIMapping({
+            '/': site.index,
             '/static/': site.static,
             '/json/server_list': site.json.server_list,
             '/json/server_info': site.json.server_info,
