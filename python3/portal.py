@@ -1,8 +1,29 @@
 # -*- coding: utf-8 -*-
 
 ##############################################################################
+# import modules
 
-# TODO: read ../model/portal.sql
+import os
+import sqlite3
+import logging
+import functools
+from ConfigParser import ConfigParser
+from wsgiref.util import shift_path_info
+
+# @depends: paste, mako
+
+# TODO: paste base, or werkzeug framework
+# TODO: class AsyncHTTPServer
+# TODO: class Template/TemplateLookup
+# TODO: class AuthMiddleware
+# TODO: class SessionMiddleware
+# TODO: /favicon.ico -> redirect to static/favicon.ico
+# TODO: use logging
+
+##############################################################################
+# Model - Database
+
+# Read ../model/portal.sql
 SQL_CREATE_TABLE = """
 
     CREATE TABLE user_table (
@@ -50,7 +71,8 @@ SQL_INSERT_USER = """
     INSERT INTO user_table (email,password) VALUES (?, ?)
 """
 SQL_INSERT_SERVER = """
-    INSERT INTO server_table (uid,address,username,password,url,comment) VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO server_table (uid,address,username,password,url,comment)
+        VALUES (?, ?, ?, ?, ?, ?)
 """
 SQL_INSERT_LOG = """
     INSERT INTO log_table (uid,sender,message) VALUES (?, ?, ?)
@@ -69,8 +91,6 @@ SQL_UPDATE_SERVER_ENABLE = """
 """
 
 ##############################################################################
-
-import sqlite3
 
 class Database(object):
 
@@ -122,7 +142,8 @@ class ServerTable(TableBase):
     table_name = 'user_table'
 
     def register(self, uid, address, username, password, url, comment):
-        self.db.execute(SQL_INSERT_SERVER, (uid,address,username,password,url,comment))
+        self.db.execute(SQL_INSERT_SERVER,
+            (uid,address,username,password,url,comment))
 
     def unregister(self, id):
         pass
@@ -155,6 +176,7 @@ class Model(object):
         self.db.commit()
 
 ##############################################################################
+# Utility functions
 
 import string
 import random
@@ -162,44 +184,59 @@ import random
 def _gen_password(length=8, letters=string.letters):
     return ''.join(random.choice(letters) for x in range(length))
 
+mime = {
+    '.txt': 'text/plane',
+    '.html': 'text/html',
+    '.js': 'text/javascript',
+    '.css': 'text/css',
+    '.png': 'image/png',
+    '.jpg': 'image/jpg',
+    '.gif': 'image/gif',
+    '.ico': 'image/x-icon',
+}
+
 ##############################################################################
+# Configure
 
-"""
-URL MAPPING:
+class MyConfigParser(ConfigParser):
+    def get_section(self, section):
+        return self._sections[section]
 
-    POST:
-        /user/register
-        /user/login
-        /user/change_password
-        /server/register
-        /server/update_info
-    
-    GET:
-        /static/
-        /json/server_list
-        /json/server_info/$address
+class Option(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
 
-"""
+def load_config(inifile, section='app-config', dict_type=Option):
+    ini = MyConfigParser(dict_type=dict_type)
+    ini.read(inifile)
+    return ini.get_section(section)
 
-def _dict2tuple(data, **kw):
-    return ((x,data[x]) for x in sorted(data, **kw))
+##############################################################################
+# HTTP Error Response
 
 def _unauth(environ, start_response):
     start_response('401 Unauthorized', [('Content-Type','text/plain')])
-    return 'Unauthorized'
+    yield 'Unauthorized'
 
 def _notfound(environ, start_response):
     start_response('404 Not Found', [('Content-Type','text/plain')])
-    return 'Not found'
+    yield 'Not found'
 
 def _notimplemented(environ, start_response):
     start_response('501 NotImplemented', [('Content-Type','text/plain')])
-    return 'Not Implemented'
+    yield 'Not Implemented'
+
 
 class HTTPErrorResponse(Exception):
     def __init__(self, status, reason=''):
         self.status = status
         self.reason = reason
+
+##############################################################################
+# URI Mapping
+
+def _dict2tuple(data, **kw):
+    return ((x,data[x]) for x in sorted(data, **kw))
 
 class URIMapping(object):
     # WSGI URI Mapping middle-ware
@@ -212,8 +249,9 @@ class URIMapping(object):
         
         for path,app in self.mapping:
             if path_info.startswith(path):
-                if path.endswith('/') and path_info[len(path)-1] == '/':
-                    environ['PATH_INFO'] = path_info[len(path)-1:]
+                # TODO: test
+                if path.endswith('/'):
+                    shift_path_info(environ)
                 return app(environ, start_response)
         else:
             raise HTTPErrorResponse(404)
@@ -247,7 +285,7 @@ class Site(object):
         except HTTPErrorResponse, e:
             handler = self.error_handlers.get(e.status, _notimplemented)
             environ['_EXCEPTION'] = e.reason
-            return [handler(environ, start_response)]
+            return handler(environ, start_response)
 
 class JamFarmPortal(Site):
     pass
@@ -259,13 +297,11 @@ class HTTPRequest(object):
         self.environ = environ
         
 class HTTPResponse(object):
-    # TODO: call/cc ?
     def __init__(self, start_response):
         self.start = start_response
 
 # Transform WSGI method call (environ, start_response) -> (request, response)
 def content_handler(func):
-    import functools
     @functools.wraps(func)
     def _wrapped(self, environ, start_response):
         request = HTTPRequest(environ)
@@ -274,8 +310,8 @@ def content_handler(func):
     return _wrapped
 
 class ContentBase(object):
-    def __init__(self, model):
-        self.model = model
+    def __init__(self, app):
+        self.app = app
 
 
 ##############################################################################
@@ -303,7 +339,7 @@ class TemplateFactory(object):
     def render(self, name):
         template = self.factory.get_template(name)
         def _func(func):
-            return lambda self,request,response: template.render(**func(self,request,response))
+            return lambda self_,req,res: template.render(**func(self_,req,res))
         return _func
 
 from mako.lookup import TemplateLookup
@@ -345,10 +381,17 @@ class JSONContent(ContentBase):
         pass
 
 class StaticContent(ContentBase):
+    # TODO: cache small file ?
     @content_handler
     def __call__(self, request, response):
-        response.start('200 Ok', [('Content-Type', 'text/plain')])
-        yield "OK"
+        path_info = request.environ['PATH_INFO']
+        path = os.path.join(self.app.config.static, path_info.strip('/'))
+        if not os.path.isfile(path):
+            raise HTTPErrorResponse(404)
+        
+        content_type = mime.get(os.path.splitext(path_info)[-1])
+        response.start('200 Ok', [('Content-Type', content_type)])
+        return open(path, 'rb')
 
 class IndexContent(ContentBase):
     @content_handler
@@ -356,51 +399,81 @@ class IndexContent(ContentBase):
     def __call__(self, request, response):
         response.start('200 Ok', [('Content-Type', 'text/html')])
         return {
-            'title': 'Index page',
+            'title': self.app.config.site_name,
         }
 
 class SiteContainer(object):
-    def __init__(self, model):
-        self.json = JSONContent(model)
-        self.user = UserContent(model)
-        self.server = ServerContent(model)
-        self.static = StaticContent(model)
-        self.index = IndexContent(model)
+    def __init__(self, model, **config):
+        self.model = model
+        self.config = Option(config)
+        
+        self.json = JSONContent(self)
+        self.user = UserContent(self)
+        self.server = ServerContent(self)
+        self.static = StaticContent(self)
+        self.index = IndexContent(self)
+
+##############################################################################
+"""
+URL MAPPING:
+
+    GET:
+        /static/$path
+        /json/server_list
+        /json/server_info/$address
+        
+    POST:
+        /user/register
+        /user/login
+        /user/change_password
+        /server/register
+        /server/update_info
+
+"""
+
+
+# XXX: refactoring URI mapping (separate get/post was not good idea)
+def build_app(**config):
+    model = Model(Database(config['dbfile']))
+    site = SiteContainer(model, **config)
+    
+    get_mapping = URIMapping({
+        '/': site.index,
+        '/static/': site.static,
+        '/json/server_list': site.json.server_list,
+        '/json/server_info': site.json.server_info,
+    })
+    post_mapping = URIMapping({
+        '/user/register': site.user.register,
+        '/user/login': site.user.login,
+        '/user/change_password': site.user.change_password,
+        '/server/register': site.server.register,
+        '/server/update_info': site.server.update_info,
+    })
+
+    return JamFarmPortal(get_mapping, post_mapping)
+
 
 ##############################################################################
 
-def test():
-    for i in range(10):
-        print(_gen_password())
+def init_app_with_config(ini_file):
+    config = load_config(inifile) if os.path.isfile(inifile) else {}
+    return build_app(**config)
 
-def test_sv():
-    from wsgiref.simple_server import make_server
-    
+
+def run_server(host='127.0.0.1', port=8000, inifile=None):
     try:
-        site = SiteContainer(Model(Database(':memory:')))
-        
-        get_mapping = URIMapping({
-            '/': site.index,
-            '/static/': site.static,
-            '/json/server_list': site.json.server_list,
-            '/json/server_info': site.json.server_info,
-        })
-        post_mapping = URIMapping({
-            '/user/register': site.user.register,
-            '/user/login': site.user.login,
-            '/user/change_password': site.user.change_password,
-            '/server/register': site.server.register,
-            '/server/update_info': site.server.update_info,
-        })
-        
-        app = JamFarmPortal(get_mapping, post_mapping)
-        server = make_server('', 8000, app)
-        server.serve_forever()
-    except KeyboardInterrupt:
-        server.shutdown()
+        from paste import reloader
+        from paste import httpserver
+        reloader.install()
+    except ImportError:
+        logging.warn('required paste.httpserver and paste.reloader')
+    
+    app = init_app_with_config(inifile)
+    httpserver.serve(app, host, int(port))
 
 
-def test_db():
+def test_model():
     from contextlib import closing
     from pprint import pprint
 
@@ -426,16 +499,15 @@ def test_db():
         for row in model.log.select():
             print(row)
 
+
 ##############################################################################
 
 def main(*argv):
-    # TEST CODE:
-    if "test" in argv:
-        test()
-    elif "server" in argv:
-        test_sv()
-    elif "model" in argv:
-        test_db()
+    if "server" in argv:
+        run_server(*argv[1:])
+    elif "test-model" in argv:
+        # This should open python shell with loading model object
+        test_model()
 
 ##############################################################################
 if __name__ == '__main__':
