@@ -96,7 +96,6 @@ class ServerConfig:
 class UserInfo:
     @classmethod
     def parse(self, data):
-
         stream = BufferStream(data)
         while not stream.empty():
             stream.step(6)
@@ -117,7 +116,7 @@ class Connection:
             self.connect(host, port)
 
     def _dummy_func(self, *args):
-        raise SystemError('call .connect methdo first.')
+        raise SystemError('call .connect method first.')
     
     def connect(self, host, port):
         conn = self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -213,5 +212,3 @@ def get_status(host, port, username, password):
 
 if __name__ == '__main__':
     pass
-
-
