@@ -7,6 +7,7 @@ import os
 import sqlite3
 import logging
 import functools
+from Cookie import SimpleCookie
 from ConfigParser import ConfigParser
 from wsgiref.util import shift_path_info
 
@@ -15,8 +16,6 @@ from wsgiref.util import shift_path_info
 # TODO: paste base, or werkzeug framework
 # TODO: class AsyncHTTPServer
 # TODO: class Template/TemplateLookup
-# TODO: def authfunc for AuthMiddleware
-# TODO: class SessionMiddleware
 # TODO: class HTTPExceptionMiddleware
 # TODO: /favicon.ico -> redirect to static/favicon.ico
 # TODO: use logging
@@ -277,13 +276,20 @@ class AuthMiddleware(MiddlewareBase):
 
 # implement this or use Beaker library (session,cache)
 class SessionMiddleware(MiddlewareBase):
+
+    key = 'session.data'
+
     def __init__(self, app, session_store):
         super(SessionMiddleware, self).__init__(app)
         self.session_store = session_store
 
     def __call__(self, environ, start_response):
-        # TODO: implement me
+        cookie = SimpleCookie(environ['HTTP_COOKIE'])
+        sid = cookie[self.session_key].value
+        if sid:
+            environ[self.session_key] = self.store[sid]
         return self.app(environ, start_response)
+
 
 ##############################################################################
 # URI Mapping
