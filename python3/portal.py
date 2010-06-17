@@ -15,8 +15,9 @@ from wsgiref.util import shift_path_info
 # TODO: paste base, or werkzeug framework
 # TODO: class AsyncHTTPServer
 # TODO: class Template/TemplateLookup
-# TODO: class AuthMiddleware
+# TODO: def authfunc for AuthMiddleware
 # TODO: class SessionMiddleware
+# TODO: class HTTPExceptionMiddleware
 # TODO: /favicon.ico -> redirect to static/favicon.ico
 # TODO: use logging
 
@@ -215,7 +216,11 @@ def load_config(inifile, section='app-config', dict_type=Option):
 # HTTP Error Response
 
 def _unauth(environ, start_response):
-    start_response('401 Unauthorized', [('Content-Type','text/plain')])
+    realm = environ['_EXCEPTION'].realm
+    start_response('401 Unauthorized',
+        [('Content-Type','text/plain'),
+         ('WWW-Authenticate','Basic realm="%s"' % realm)
+        ])
     yield 'Unauthorized'
 
 def _notfound(environ, start_response):
@@ -232,6 +237,7 @@ class HTTPErrorResponse(Exception):
         self.status = status
         self.reason = reason
 
+
 ##############################################################################
 # MiddleWare
 
@@ -242,18 +248,32 @@ class MiddlewareBase(object):
     def __call__(self, environ, start_response):
         raise NotImplementedError
 
+
 class AuthMiddleware(MiddlewareBase):
-    def __init__(self, app, auth_db):
-        # auth_db is a dict-like object implements __getitem__
+    def __init__(self, app, realm, authfunc):
         super(AuthMiddleware, self).__init__(app)
-        self.auth_db = auth_db
-        
-    def check_password(self, username, password):
-        return self.auth_db[username] == password
-        
+        self.realm = realm
+        self.authfunc = authfunc
+
+    def authorized(self, auth):
+        if not auth:
+            return False 
+        auth_type, encoded = auth.split(None,1)
+        if auth_type.lower() != "basic":
+            return False
+        username,password = encoded.decode('base64').split(':')
+        return self.authfunc(username, password)
+
     def __call__(self, environ, start_response):
-        # TODO: implement me
-        return self.app(environ, start_response)
+        if not self.authorized(environ['HTTP_AUTHORIZATION']):
+            # TODO: raise 401
+            start_response('401 Unauthorized',
+                [('Content-Type','text/html'),
+                 ('WWW-Authenticate', 'Basic realm="%s"' % self.realm)])
+            return ["auth page"] # XXX: response page for 401
+        else:
+            return app(environ, start_response)
+
 
 # implement this or use Beaker library (session,cache)
 class SessionMiddleware(MiddlewareBase):
@@ -315,7 +335,7 @@ class Site(object):
                 raise HTTPErrorResponse(500)
         except HTTPErrorResponse, e:
             handler = self.error_handlers.get(e.status, _notimplemented)
-            environ['_EXCEPTION'] = e.reason
+            environ['_EXCEPTION'] = e
             return handler(environ, start_response)
 
 class JamFarmPortal(Site):
@@ -363,8 +383,7 @@ class require_auth(object):
 ##############################################################################
 # Response
 
-# XXX:
-class TemplateFactory(object):
+class View(object):
     def __init__(self, factory):
         self.factory = factory
 
@@ -462,7 +481,8 @@ URL MAPPING:
 # XXX: refactoring URI mapping (separate get/post was not good idea)
 def build_app(**config):
     from mako.lookup import TemplateLookup
-    view = TemplateFactory(TemplateLookup(directories=config['templates']))
+    
+    view = View(TemplateLookup(directories=config['templates'].split(',')))
     model = Model(Database(config['dbfile']))
     site = SiteContainer(model, view, **config)
     
