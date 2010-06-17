@@ -233,6 +233,39 @@ class HTTPErrorResponse(Exception):
         self.reason = reason
 
 ##############################################################################
+# MiddleWare
+
+class MiddlewareBase(object):
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        raise NotImplementedError
+
+class AuthMiddleware(MiddlewareBase):
+    def __init__(self, app, auth_db):
+        # auth_db is a dict-like object implements __getitem__
+        super(AuthMiddleware, self).__init__(app)
+        self.auth_db = auth_db
+        
+    def check_password(self, username, password):
+        return self.auth_db[username] == password
+        
+    def __call__(self, environ, start_response):
+        # TODO: implement me
+        return self.app(environ, start_response)
+
+# implement this or use Beaker library (session,cache)
+class SessionMiddleware(MiddlewareBase):
+    def __init__(self, app, session_store):
+        super(SessionMiddleware, self).__init__(app)
+        self.session_store = session_store
+
+    def __call__(self, environ, start_response):
+        # TODO: implement me
+        return self.app(environ, start_response)
+
+##############################################################################
 # URI Mapping
 
 def _dict2tuple(data, **kw):
@@ -246,10 +279,8 @@ class URIMapping(object):
 
     def __call__(self, environ, start_response):
         path_info = environ['PATH_INFO']
-        
         for path,app in self.mapping:
             if path_info.startswith(path):
-                # TODO: test
                 if path.endswith('/'):
                     shift_path_info(environ)
                 return app(environ, start_response)
@@ -332,19 +363,14 @@ class require_auth(object):
 ##############################################################################
 # Response
 
+# XXX:
 class TemplateFactory(object):
-    def __init__(self, factory, srcdir):
-        self.factory = factory(directories=srcdir)
+    def __init__(self, factory):
+        self.factory = factory
 
-    def render(self, name):
+    def render(self, name, **args):
         template = self.factory.get_template(name)
-        def _func(func):
-            return lambda self_,req,res: template.render(**func(self_,req,res))
-        return _func
-
-# TODO: set directories from config
-from mako.lookup import TemplateLookup
-template = TemplateFactory(TemplateLookup, './templates')
+        return template.render(**args)
 
 ##############################################################################
 # Implements Application
@@ -357,7 +383,7 @@ class UserContent(ContentBase):
     @content_handler
     def login(self, request, response):
         pass
-        
+    
     @content_handler
     def change_password(self, request, response):
         pass
@@ -395,15 +421,16 @@ class StaticContent(ContentBase):
 
 class IndexContent(ContentBase):
     @content_handler
-    @template.render('index.html')
     def __call__(self, request, response):
         response.start('200 Ok', [('Content-Type', 'text/html')])
-        return {
-            'title': self.app.config.site_name,
-        }
+        return self.app.view.render(
+            'index.html',
+            title=self.app.config.site_name,
+        )
 
 class SiteContainer(object):
-    def __init__(self, model, **config):
+    def __init__(self, model, view, **config):
+        self.view = view
         self.model = model
         self.config = Option(config)
         
@@ -434,14 +461,16 @@ URL MAPPING:
 
 # XXX: refactoring URI mapping (separate get/post was not good idea)
 def build_app(**config):
+    from mako.lookup import TemplateLookup
+    view = TemplateFactory(TemplateLookup(directories=config['templates']))
     model = Model(Database(config['dbfile']))
-    site = SiteContainer(model, **config)
+    site = SiteContainer(model, view, **config)
     
     get_mapping = URIMapping({
-        '/': site.index,
         '/static/': site.static,
         '/json/server_list': site.json.server_list,
         '/json/server_info': site.json.server_info,
+        '/': site.index,
     })
     post_mapping = URIMapping({
         '/user/register': site.user.register,
@@ -465,11 +494,14 @@ def run_server(host='127.0.0.1', port=8000, inifile=None):
     try:
         from paste import reloader
         from paste import httpserver
+        from paste.evalexception import EvalException
         reloader.install()
     except ImportError:
         logging.warn('required paste.httpserver and paste.reloader')
     
     app = init_app_with_config(inifile)
+    if __debug__:
+        app = EvalException(app)
     httpserver.serve(app, host, int(port))
 
 
@@ -508,8 +540,11 @@ def main(*argv):
     elif "test-model" in argv:
         # This should open python shell with loading model object
         test_model()
+    elif "shell" in argv:
+        print("use python -i option instead")
 
 ##############################################################################
 if __name__ == '__main__':
     import sys
+    # logging.basicConfig(level=logging.INFO)
     main(*sys.argv[1:])
