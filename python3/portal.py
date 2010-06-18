@@ -87,7 +87,7 @@ SQL_UPDATE_USER_PASSWORD = """
 """
 
 SQL_UPDATE_SERVER_ENABLE = """
-    UPDATE server_table SET enable = ? WHERE uid = ?
+    UPDATE server_table SET enable = ? WHERE id = ? AND uid = ?
 """
 
 ##############################################################################
@@ -145,12 +145,12 @@ class ServerTable(TableBase):
         self.db.execute(SQL_INSERT_SERVER,
             (uid,address,username,password,url,comment))
 
-    def unregister(self, id):
+    def unregister(self, sid, uid):
         # TODO: server unregister
         pass
 
-    def change_state(self, uid, state):
-        self.db.execute(SQL_UPDATE_SERVER_ENABLE, (state,uid))
+    def change_state(self, sid, uid, state):
+        self.db.execute(SQL_UPDATE_SERVER_ENABLE, (state,sid,uid))
 
 class LogTable(TableBase):
     table_name = 'log_table'
