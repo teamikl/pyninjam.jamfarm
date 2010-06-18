@@ -463,7 +463,8 @@ class UserContent(ContentBase):
         
     @content_handler
     def login(self, request, response):
-        pass
+        response.start(200, 'Ok', **{'Content-Type':'text/html'})
+        yield "login test ok"
     
     @content_handler
     def change_password(self, request, response):

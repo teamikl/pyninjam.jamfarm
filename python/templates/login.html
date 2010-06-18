@@ -1,0 +1,23 @@
+
+<!--
+  TODO: set default value from cookie
+  TODO: move style -> CSS
+-->
+
+<div style="text-align:center; width: 400px; border:solid 1px black; padding: 20px;">
+<form action="/user/login" method="post">
+  <p>
+  <label for="username">Username:</label><input type="text" id="username" maxlength="64" />
+  </p>
+  <p>
+  <label for="password">Password:</label><input type="password" id="password" maxlength="16" />
+  </p>
+  <p>
+  <label for="autologin">Auto login next time</label><input type="checkbox" id="autologin" checked="checked" />
+
+  <a href="/remind_password">remind password</a>
+
+  </p>
+  <input type="submit" value="Login" />
+</form>
+</div>
