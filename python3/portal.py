@@ -21,7 +21,7 @@ from wsgiref.util import shift_path_info
 # TODO: use logging
 
 ##############################################################################
-# Model - Database
+# Model
 
 # Read ../model/portal.sql
 SQL_CREATE_TABLE = """
@@ -198,16 +198,16 @@ mime = {
 
 compose = lambda funcs,arg: reduce(lambda x,f:f(x), funcs, arg)
 
+class Option(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
 ##############################################################################
 # Configure
 
 class MyConfigParser(ConfigParser):
     def get_section(self, section):
         return self._sections[section]
-
-class Option(dict):
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
 def load_config(inifile, section='app-config', dict_type=Option):
     ini = MyConfigParser(dict_type=dict_type)
@@ -243,8 +243,10 @@ class HTTPErrorResponse(Exception):
         self.status = status
         self.reason = reason
 
+    # TODO: def __call__(self, environ, start_response):
+
 ##############################################################################
-# MiddleWare
+# Middleware
 
 class MiddlewareBase(object):
     def __init__(self, app=None):
@@ -341,7 +343,7 @@ def _dict2tuple(data, **kw):
 
 
 class URIMapping(object):
-    # WSGI URI Mapping middle-ware
+    # TODO: move to middleware section
 
     def __init__(self, mapping):
         self.mapping = list(_dict2tuple(mapping, key=len, reverse=True))
@@ -449,7 +451,7 @@ class View(object):
         return template.render(**args)
 
 ##############################################################################
-# Implements Application
+# Contents
 
 class UserContent(ContentBase):
     @content_handler
