@@ -428,12 +428,15 @@ class ContentBase(object):
 # Request
 
 class require_auth(object):
+
+    # functools.wrap required __name__
     __name__ = 'require_auth'
 
-    def __init__(self, func):
-        self.func = func
+    def __init__(self, authfunc):
+        self.authfunc = authfunc
         
     def __call__(self, self_, request, response):
+        # TODO: implement auth mechanism for content handler base
         if not hasattr(request,'auth') or not request.auth:
             raise HTTPErrorResponse(401)
         return self.func(self_, request, response)
