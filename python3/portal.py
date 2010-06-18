@@ -196,6 +196,8 @@ mime = {
     '.ico': 'image/x-icon',
 }
 
+compose = lambda funcs,arg: reduce(lambda x,f:f(x), funcs, arg)
+
 ##############################################################################
 # Configure
 
@@ -244,6 +246,11 @@ class HTTPErrorResponse(Exception):
 class MiddlewareBase(object):
     def __init__(self, app):
         self.app = app
+        
+    def bind(self, app):
+        # for lazy-binding app
+        self.app = app
+        return self
 
     def __call__(self, environ, start_response):
         raise NotImplementedError
@@ -265,7 +272,7 @@ class AuthMiddleware(MiddlewareBase):
         return self.authfunc(username, password)
 
     def __call__(self, environ, start_response):
-        if not self.authorized(environ['HTTP_AUTHORIZATION']):
+        if not self.authorized(environ.get('HTTP_AUTHORIZATION','')):
             # TODO: raise 401
             start_response('401 Unauthorized',
                 [('Content-Type','text/html'),
@@ -290,6 +297,23 @@ class SessionMiddleware(MiddlewareBase):
         if sid:
             environ[self.session_key] = self.store[sid]
         return self.app(environ, start_response)
+
+
+class HTTPErrorResponseMiddleware(MiddlewareBase):
+
+    error_handlers = {
+        401: _unauth,
+        404: _notfound,
+        500: _notimplemented, # XXX: 500 is server error ?
+    }
+    
+    def __call__(self, environ, start_response):
+        try:
+            return self.app(environ, start_response)
+        except HTTPErrorResponse, e:
+            handler = self.error_handlers.get(e.status, _notimplemented)
+            environ['_EXCEPTION'] = e
+            return handler(environ, start_response)
 
 ##############################################################################
 
@@ -332,33 +356,22 @@ class URIMapping(object):
 
 class Site(object):
     # WSGI application base
-    
-    error_handlers = {
-        401: _unauth,
-        404: _notfound,
-        500: _notimplemented,
-    }
 
     def __init__(self, get, post):
         self.get = get
         self.post = post
 
     def __call__(self, environ, start_response):
-        try:
-            request_method = environ.get('REQUEST_METHOD', None)
-            request = HTTPRequest(environ)
-            response = HTTPResponse(start_response)
-            
-            if request_method == 'GET':
-                return self.get(environ, start_response)
-            elif request_method == 'POST':
-                return self.post(environ, start_response)
-            else:
-                raise HTTPErrorResponse(500)
-        except HTTPErrorResponse, e:
-            handler = self.error_handlers.get(e.status, _notimplemented)
-            environ['_EXCEPTION'] = e
-            return handler(environ, start_response)
+        request_method = environ.get('REQUEST_METHOD', None)
+        request = HTTPRequest(environ)
+        response = HTTPResponse(start_response)
+
+        if request_method == 'GET':
+            return self.get(environ, start_response)
+        elif request_method == 'POST':
+            return self.post(environ, start_response)
+        else:
+            raise HTTPErrorResponse(500)
 
 class JamFarmPortal(Site):
     pass
@@ -528,6 +541,10 @@ def build_app(**config):
     model = Model(Database(config['dbfile']))
     site = SiteContainer(model, view, **config)
     
+    middleware_chain = [
+        HTTPErrorResponseMiddleware,
+    ]
+    
     get_mapping = URIMapping({
         '/static/': site.static,
         '/json/server_list': site.json.server_list,
@@ -542,8 +559,10 @@ def build_app(**config):
         '/server/update_info': site.server.update_info,
     })
 
-    return JamFarmPortal(get_mapping, post_mapping)
-
+    app = JamFarmPortal(get_mapping, post_mapping)
+    
+    return compose(middleware_chain, app)
+    
 
 ##############################################################################
 
