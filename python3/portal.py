@@ -517,23 +517,6 @@ class SiteContainer(object):
         self.index = IndexContent(self)
 
 ##############################################################################
-"""
-URL MAPPING:
-
-    GET:
-        /static/$path
-        /json/server_list
-        /json/server_info/$address
-        
-    POST:
-        /user/register
-        /user/login
-        /user/change_password
-        /server/register
-        /server/update_info
-
-"""
-
 
 # XXX: refactoring URI mapping (separate get/post was not good idea)
 def build_app(**config):
@@ -548,9 +531,9 @@ def build_app(**config):
     ]
     
     get_mapping = URIMapping({
-        '/static/': site.static,
         '/json/server_list': site.json.server_list,
         '/json/server_info': site.json.server_info,
+        '/static/': site.static,
         '/': site.index,
     })
     post_mapping = URIMapping({
