@@ -217,7 +217,12 @@ def load_config(inifile, section='app-config', dict_type=Option):
 ##############################################################################
 # HTTP Error Response
 
+# TODO: each ErrorResponse instance should return response
+# TODO: return view.render("./error/404.html", **environ)
+# TODO: adapter to environ,start_response -> request,response
+
 def _unauth(environ, start_response):
+    # XXX: realm not passed
     realm = environ['_EXCEPTION'].realm
     start_response('401 Unauthorized',
         [('Content-Type','text/plain'),
@@ -233,18 +238,16 @@ def _notimplemented(environ, start_response):
     start_response('501 NotImplemented', [('Content-Type','text/plain')])
     yield 'Not Implemented'
 
-
 class HTTPErrorResponse(Exception):
     def __init__(self, status, reason=''):
         self.status = status
         self.reason = reason
 
-
 ##############################################################################
 # MiddleWare
 
 class MiddlewareBase(object):
-    def __init__(self, app):
+    def __init__(self, app=None):
         self.app = app
         
     def bind(self, app):
@@ -257,7 +260,7 @@ class MiddlewareBase(object):
 
 
 class AuthMiddleware(MiddlewareBase):
-    def __init__(self, app, realm, authfunc):
+    def __init__(self, realm, authfunc, app=None):
         super(AuthMiddleware, self).__init__(app)
         self.realm = realm
         self.authfunc = authfunc
@@ -287,7 +290,7 @@ class SessionMiddleware(MiddlewareBase):
 
     key = 'session.data'
 
-    def __init__(self, app, session_store):
+    def __init__(self, session_store, app=None):
         super(SessionMiddleware, self).__init__(app)
         self.session_store = session_store
 
@@ -304,7 +307,7 @@ class HTTPErrorResponseMiddleware(MiddlewareBase):
     error_handlers = {
         401: _unauth,
         404: _notfound,
-        500: _notimplemented, # XXX: 500 is server error ?
+        501: _notimplemented,
     }
     
     def __call__(self, environ, start_response):
@@ -371,7 +374,7 @@ class Site(object):
         elif request_method == 'POST':
             return self.post(environ, start_response)
         else:
-            raise HTTPErrorResponse(500)
+            raise HTTPErrorResponse(501)
 
 class JamFarmPortal(Site):
     pass
@@ -380,7 +383,6 @@ class JamFarmPortal(Site):
 
 class HTTPRequest(object):
     # TODO: access form data
-    # TODO: 
 
     def __init__(self, environ):
         self.environ = environ
