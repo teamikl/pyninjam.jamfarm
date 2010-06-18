@@ -146,6 +146,7 @@ class ServerTable(TableBase):
             (uid,address,username,password,url,comment))
 
     def unregister(self, id):
+        # TODO: server unregister
         pass
 
     def change_state(self, uid, state):
@@ -290,12 +291,27 @@ class SessionMiddleware(MiddlewareBase):
             environ[self.session_key] = self.store[sid]
         return self.app(environ, start_response)
 
+##############################################################################
+
+# TODO: import cPickle
+# TODO: from tempfile import TemporaryFile
+
+class SessionStore(dict):
+
+    def __init__(self, factory=dict):
+        self.factory = factory
+
+    def __getitem__(self, key):
+        if not key in self:
+            self[key] = self.factory()
+        return dict.__getitem__(self, key)
 
 ##############################################################################
 # URI Mapping
 
 def _dict2tuple(data, **kw):
     return ((x,data[x]) for x in sorted(data, **kw))
+
 
 class URIMapping(object):
     # WSGI URI Mapping middle-ware
@@ -350,12 +366,32 @@ class JamFarmPortal(Site):
 ##############################################################################
 
 class HTTPRequest(object):
+    # TODO: access form data
+    # TODO: 
+
     def __init__(self, environ):
         self.environ = environ
         
-class HTTPResponse(object):
-    def __init__(self, start_response):
-        self.start = start_response
+    def __getattr__(self, key):
+        key = key.upper()
+        if key in self.environ:
+            return self.environ[key]
+        raise AttributeError, key
+
+
+class HTTPResponse(dict):
+    def __init__(self, start_response, **headers):
+        self.start_response = start_response
+        self.update_headers(headers)
+    
+    def update_headers(self, headers):
+        assert isinstance(headers, dict)
+        for k,v in headers.iteritems():
+            self[k.lower()] = v
+    
+    def start(self, code, state, **headers):
+        headers.update(self)
+        self.start_response("%d %s" % (code, state), _dict2tuple(headers))
 
 # Transform WSGI method call (environ, start_response) -> (request, response)
 def content_handler(func):
@@ -432,22 +468,22 @@ class JSONContent(ContentBase):
         pass
 
 class StaticContent(ContentBase):
-    # TODO: cache small file ?
+    # TODO: spool cache small file ?
     @content_handler
     def __call__(self, request, response):
-        path_info = request.environ['PATH_INFO']
+        path_info = request.path_info
         path = os.path.join(self.app.config.static, path_info.strip('/'))
         if not os.path.isfile(path):
             raise HTTPErrorResponse(404)
         
         content_type = mime.get(os.path.splitext(path_info)[-1])
-        response.start('200 Ok', [('Content-Type', content_type)])
+        response.start(200, 'Ok', **{'Content-Type': content_type})
         return open(path, 'rb')
 
 class IndexContent(ContentBase):
     @content_handler
     def __call__(self, request, response):
-        response.start('200 Ok', [('Content-Type', 'text/html')])
+        response.start(200, 'Ok', **{'Content-Type': 'text/html'})
         return self.app.view.render(
             'index.html',
             title=self.app.config.site_name,
