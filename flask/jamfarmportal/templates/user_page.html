@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}User page{% endblock %}
+{% block header %}
+<h1>User page</h1>
+<h2>Welcome {{ user.email|escape }}</h2>
+<nav>
+  <ul>
+    <li><a href="/">Home</a>
+    <li><a href="#add_server">Add server</a>
+  </ul>
+</nav>
+{% endblock %}
+{% block content %}
+  
+  <section>
+  <h1>My Server entries</h1>
+  <ul>
+  {% for entry in server_list %}
+    <li>{{ entry.server|escape }}
+      [<a href="/server/enable/{{ entry.server|escape }}">Enable</a>]
+      [<a href="/server/modify/{{ entry.server|escape }}">Modify</a>]
+      [<a href="/server/delete/{{ entry.server|escape }}">Delete</a>]
+  {% endfor %}
+  </ul>
+  </section>
+  
+  {%include "add_server_form.html" %}
+{% endblock %}

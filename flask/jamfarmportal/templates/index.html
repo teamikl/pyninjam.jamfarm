@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+{% block header %}
+<nav>
+  <h1>JamFarm Portal</h1>
+  <ul>
+    {% if 'login' in session %}
+      <li><a href="/user">User page</a>
+      <li><a href="/logout">Logout</a>
+    {% else %}
+      <li><a href="/login">Login</a>
+    {% endif %}
+  </ul>
+</nav>
+{% endblock %}
+{% block content %}
+
+{% include "server_list.html" %}
+
+{% endblock %}

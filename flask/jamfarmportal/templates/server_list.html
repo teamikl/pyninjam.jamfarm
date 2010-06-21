@@ -1,0 +1,40 @@
+
+<script src="/static/jamfarm.js" type="text/javascript"></script>
+
+<section id="server_list">
+<h1>Server List</h1>
+<table>
+<caption>{{ timestamp }}</caption>
+<colgroup style="width:150px">
+<colgroup style="width:100px">
+<colgroup style="width:50px">
+<colgroup style="width:250px">
+<colgroup style="width:200px">
+<colgroup style="width:300px">
+<thead>
+  <tr>
+    <th>Server
+    <th>Status
+    <th>Info
+    <th>Members
+    <th>Topic
+    <th>Comment
+<tbody>
+{% for entry in server_list %}
+  <tr id="server_{{ entry.id }}">
+    <td><a href="{{ entry.website|escape }}">{{ entry.server|escape }}</a>
+    <td>Loading ...
+    <td>
+    <td>
+    <td>
+    <td>{{ entry.comment|escape }}
+{% endfor %}
+</tbody>
+</table>
+</section>
+
+<script>
+  {% for entry in server_list %}
+    get_status("{{ entry.server|escape }}", $("#server_{{ entry.id }}"))
+  {% endfor %}
+</script>

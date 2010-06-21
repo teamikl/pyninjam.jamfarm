@@ -1,0 +1,9 @@
+setup.cfg
+setup.py
+JamFarmPortal.egg-info/PKG-INFO
+JamFarmPortal.egg-info/SOURCES.txt
+JamFarmPortal.egg-info/dependency_links.txt
+JamFarmPortal.egg-info/entry_points.txt
+JamFarmPortal.egg-info/not-zip-safe
+JamFarmPortal.egg-info/top_level.txt
+jamfarmportal/__init__.py

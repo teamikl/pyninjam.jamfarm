@@ -1,0 +1,36 @@
+
+/* HTML5 */
+  article, aside, figure, footer, header, hgroup, 
+  menu, nav, section { display: block; }
+
+body {
+  background-color: #ffffee;
+}
+
+#header nav ul {
+  text-align: right;
+}
+#header nav li {
+  display: inline;
+}
+
+body h1 {
+  background-color: maroon;
+  color: white;
+  margin: 0px;
+  font-size: 40px;
+}
+
+section h1 {
+  border-bottom: solid 2px maroon;
+  font-size: 24px;
+}
+
+caption {
+  text-align: right;
+}
+
+th {
+  background-color: #ddddaa;
+  color: white;
+}

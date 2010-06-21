@@ -1,0 +1,23 @@
+
+<section id="add_server">
+  <h1>Add server</h1>
+  <form action="/server/add" method="post">
+    <fieldset>
+    <legend>NINJAM Server</legend>
+    <label>Server</label>
+      <input type="text" name="server" value="example.com:2050" />
+    <label>Status user:</label>
+    <input type="text" name="status_username" />
+    <label>Status password:</label>
+    <input type="text" name="status_password" />
+    </fieldset>
+    <fieldset>
+    <legend>Site</legend>
+    <label>Comment</label>
+    <textarea name="comment"></textarea><br />
+    <label>Web site</label>
+    <input type="text" name="website" value="http://" /><br />
+    </fieldset>
+    <input type="submit" value="Add Server" />
+  </form>
+</section>

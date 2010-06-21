@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<link href="/static/style.css" type="text/css" rel="stylesheet" />
+<title>JamFarm portal - {%block title %}{% endblock %}</title>
+<script src="http://www.google.com/jsapi" type="text/javascript"></script>
+<script>
+  google.load('jquery', '1.4.2')
+</script>
+</head>
+<body>
+
+<header id="header">
+{%block header %}{% endblock %}
+</header>
+
+<div id="content">
+{%block content %}{% endblock %}
+</div>
+
+</body>
+</html>
