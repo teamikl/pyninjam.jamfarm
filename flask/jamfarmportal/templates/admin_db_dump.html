@@ -1,0 +1,57 @@
+
+
+  <style>
+    table {
+      margin: 15px;
+    }
+    table caption {
+      text-align: right;
+    }
+    th {
+      background-color: #eeeeff;
+    }
+    td {
+      border-bottom: solid 1px black;
+    }
+    
+  </style>
+
+  <table summary="User table">
+  <caption>User</caption>
+  <thead>
+    <tr>
+      <th>ID
+      <th>E-mail
+      <th>password
+  </thead>
+  <tbody>
+  {% for entry in users %}
+    <tr>
+      <td>{{ entry.id|escape }}
+      <td>{{ entry.email|escape }}
+      <td>{{ entry.password|escape }}
+  {% endfor %}
+  </tbody>
+  </table>
+
+  <table summary="Site table">
+  <caption>Site</caption>
+  <thead>
+    <tr>
+      <th>server
+      <th>status user/pass
+      <th>website
+      <th>comment
+      <th>created
+  </thead>
+  <tbody>
+  {% for entry in sites %}
+    <tr>
+      <td>{{ entry.server|escape }}
+      <td>{{ entry.username|escape }} / {{ entry.password|escape }}
+      <td><a href="{{ entry.website|escape }}">website</a>
+      <td>{{ entry.comment|escape }}
+      <td>{{ entry.created }}
+  {% endfor %}
+  </tbody>
+  </table>
