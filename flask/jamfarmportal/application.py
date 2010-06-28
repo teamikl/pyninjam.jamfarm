@@ -11,6 +11,7 @@ from flask import (
 import ninjam
 from database import db_session
 from models import User, Site
+from utils import generate_password
 
 app = Flask(__name__)
 app.secret_key = "\x7fE?yW\x9c\xceP\xc0\x06'\x97f\xd6\xddL\xe3pu\xd8\x87.FR"
@@ -25,6 +26,28 @@ def index():
     return render_template('index.html',
         timestamp=datetime.datetime.today(),
         server_list=Site.query.all())
+
+@app.route('/admin/db/dump')
+def admin_db_dump():
+    # For debug/admin db view
+    return render_template('admin_db_dump.html',
+        users=User.query.all(),
+        sites=Site.query.all())
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    # XXX: POST ... Bad Request
+    if request.method == 'POST':
+        email = request.form['email']
+        # Check valid email address
+        # Send password to mail
+        
+        user = User(email, password=generate_password())
+        db_session.add(user)
+        db_session.commit()
+        
+        return redirect('/')
+    return render_template('register_form.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

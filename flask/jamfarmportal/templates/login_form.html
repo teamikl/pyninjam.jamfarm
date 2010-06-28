@@ -3,10 +3,20 @@
 {% block title %}Login form{% endblock %}
 {% block content %}
 
-<form action="/login" method="POST">
-<label>E-mail</label><input type="text" name="email" />
-<label>Password</label><input type="password" name="password" />
-<input type="submit" value="login" />
+<form action="/login" method="post">
+  <fieldset>
+  <legend>Login</legend>
+  <p>
+    <label for="email">E-mail : </label>
+    <input type="text" name="email" id="email" />
+  <p>
+    <label for="password">Password : </label>
+    <input type="password" name="password" id="password" />
+  <p>
+    <input type="submit" value="login" />
+    <a href="/remind">Remind Password</a>
+    <a href="/register">Create Account</a>
+  </fieldset>
 </form>
 
 {% endblock %}
