@@ -7,11 +7,13 @@ from flask import (
         Flask, render_template, jsonify,
         request, session, redirect, abort, escape
     )
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 
 import ninjam
 from database import db_session
 from models import User, Site
-from utils import generate_password
+from utils import generate_password, is_valid_email
 
 app = Flask(__name__)
 app.secret_key = "\x7fE?yW\x9c\xceP\xc0\x06'\x97f\xd6\xddL\xe3pu\xd8\x87.FR"
@@ -34,18 +36,45 @@ def admin_db_dump():
         users=User.query.all(),
         sites=Site.query.all())
 
+@app.route('/admin/db/delete/<table>', methods=['POST'])
+def admin_db_delete(table):
+    assert table in ('user','site')
+    values = request.form.getlist('selected')
+    try:
+        if table == 'user':
+            for uid in values:
+                for site in Site.query.filter(Site.owner==uid):
+                    db_session.delete(site)
+                for user in User.query.filter(User.id==uid):
+                    db_session.delete(user)
+            db_session.commit()
+        elif table == 'site':
+            for sid in values:
+                site = Site.query.filter(Site.id==sid).one()
+                db_session.delete(site)
+            db_session.commit()
+    except NoResultFound:
+        db_session.rollback()
+            
+    return redirect('/admin/db/dump')
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     # XXX: POST ... Bad Request
     if request.method == 'POST':
         email = request.form['email']
-        # Check valid email address
+        if not is_valid_email(email):
+            reason = 'not valid email address'
+            return render_template('register_error.html', reason=reason)
+        try:
+            user = User(email, password=generate_password())
+            db_session.add(user)
+            db_session.commit()
+        except IntegrityError, e:
+            reason = '%s already exists' % escape(email)
+            return render_template('register_error.html', reason=reason)
+            
         # Send password to mail
-        
-        user = User(email, password=generate_password())
-        db_session.add(user)
-        db_session.commit()
-        
         return redirect('/')
     return render_template('register_form.html')
 

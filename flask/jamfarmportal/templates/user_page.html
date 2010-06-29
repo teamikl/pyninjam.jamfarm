@@ -6,7 +6,7 @@
 <nav>
   <ul>
     <li><a href="/">Home</a>
-    <li><a href="#add_server">Add server</a>
+    <li><a href="/logout">Logout</a>
   </ul>
 </nav>
 {% endblock %}
@@ -14,14 +14,30 @@
   
   <section>
   <h1>My Server entries</h1>
-  <ul>
+  
+  <form action="" method="post">
+  <table summary="Server list table">
+  <caption>Server list</caption>
+  <thead>
+    <tr>
+      <th>
+      <th>Server address
+      <th>Status user/pass
+      <th>Website
+      <th>Comment
+  <tbody>
   {% for entry in server_list %}
-    <li>{{ entry.server|escape }}
-      [<a href="/server/enable/{{ entry.server|escape }}">Enable</a>]
-      [<a href="/server/modify/{{ entry.server|escape }}">Modify</a>]
-      [<a href="/server/delete/{{ entry.server|escape }}">Delete</a>]
+    <tr>
+      <td><input type="checkbox" name="server" value="{{ entry.id }}" />
+      <td>{{ entry.server|escape }}
+      <td>{{ entry.username|escape }} / {{ entry.password|escape }}
+      <td>{{ entry.website }}
+      <td>{{ entry.comment }}
   {% endfor %}
-  </ul>
+  </tbody>
+  </table>
+  </form>
+  
   </section>
   
   {%include "add_server_form.html" %}

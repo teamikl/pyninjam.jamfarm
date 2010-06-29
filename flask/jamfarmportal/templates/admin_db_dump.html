@@ -1,40 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %} Admin db manager {% endblock %}
+{% block content %}
 
 
-  <style>
-    table {
-      margin: 15px;
-    }
-    table caption {
-      text-align: right;
-    }
-    th {
-      background-color: #eeeeff;
-    }
-    td {
-      border-bottom: solid 1px black;
-    }
-    
-  </style>
-
-  <table summary="User table">
+  <form action="/admin/db/delete/user" method="post">
+  <table>
   <caption>User</caption>
   <thead>
     <tr>
-      <th>ID
+      <th>
       <th>E-mail
-      <th>password
   </thead>
   <tbody>
   {% for entry in users %}
     <tr>
-      <td>{{ entry.id|escape }}
+      <td><input type="checkbox" name="selected" value="{{ entry.id }}" />
       <td>{{ entry.email|escape }}
-      <td>{{ entry.password|escape }}
   {% endfor %}
   </tbody>
   </table>
+  <input type="submit" value="delete" />
+  </form>
 
-  <table summary="Site table">
+  <form action="/admin/db/delete/site" method="post">
+  <table>
   <caption>Site</caption>
   <thead>
     <tr>
@@ -47,11 +37,15 @@
   <tbody>
   {% for entry in sites %}
     <tr>
+      <td><input type="checkbox" name="selected" value="{{ entry.id }}" />
       <td>{{ entry.server|escape }}
-      <td>{{ entry.username|escape }} / {{ entry.password|escape }}
-      <td><a href="{{ entry.website|escape }}">website</a>
+      <td><a href="{{ entry.website|escape }}">{{ entry.website|escape }}</a>
       <td>{{ entry.comment|escape }}
       <td>{{ entry.created }}
   {% endfor %}
   </tbody>
   </table>
+  </form>
+
+
+{% endblock %}
