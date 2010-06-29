@@ -4,11 +4,12 @@
 <nav>
   <h1>JamFarm Portal</h1>
   <ul>
-    {% if 'login' in session %}
+    {% if 'user' in session %}
       <li><a href="/user">User page</a>
-      <li><a href="/logout">Logout</a>
+      <li><a href="/signout">Sign out</a>
     {% else %}
-      <li><a href="/login">Login</a>
+      <li><a href="/signin">Sign up</a>
+      <li><a href="/signin">Sign in</a>
     {% endif %}
   </ul>
 </nav>

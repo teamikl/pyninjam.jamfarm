@@ -29,10 +29,15 @@ def index():
         timestamp=datetime.datetime.today(),
         server_list=Site.query.all())
 
-@app.route('/admin/db/dump')
+
+@app.route('/admin/')
+def admin_index():
+    return render_template('admin.html')
+
+@app.route('/admin/db/')
 def admin_db_dump():
     # For debug/admin db view
-    return render_template('admin_db_dump.html',
+    return render_template('admin_db.html',
         users=User.query.all(),
         sites=Site.query.all())
 

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Login form{% endblock %}
+{% block title %}Sign in form{% endblock %}
 {% block content %}
 
-<form action="/login" method="post">
+<form action="/signin" method="post">
   <fieldset>
-  <legend>Login</legend>
+  <legend>Sign in</legend>
   <p>
     <label for="email">E-mail : </label>
     <input type="text" name="email" id="email" />
@@ -15,7 +15,7 @@
   <p>
     <input type="submit" value="login" />
     <a href="/remind">Remind Password</a>
-    <a href="/register">Create Account</a>
+    <a href="/signup">Create Account</a>
   </fieldset>
 </form>
 
