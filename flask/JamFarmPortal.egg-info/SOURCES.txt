@@ -1,3 +1,4 @@
+README.txt
 setup.cfg
 setup.py
 JamFarmPortal.egg-info/PKG-INFO
@@ -7,3 +8,21 @@ JamFarmPortal.egg-info/entry_points.txt
 JamFarmPortal.egg-info/not-zip-safe
 JamFarmPortal.egg-info/top_level.txt
 jamfarmportal/__init__.py
+jamfarmportal/application.py
+jamfarmportal/database.py
+jamfarmportal/models.py
+jamfarmportal/ninjam.py
+jamfarmportal/utils.py
+jamfarmportal/static/jamfarm.js
+jamfarmportal/static/style.css
+jamfarmportal/templates/add_server_form.html
+jamfarmportal/templates/admin.html
+jamfarmportal/templates/admin_db.html
+jamfarmportal/templates/base.html
+jamfarmportal/templates/index.html
+jamfarmportal/templates/page_not_found.html
+jamfarmportal/templates/server_list.html
+jamfarmportal/templates/signin_form.html
+jamfarmportal/templates/signup_error.html
+jamfarmportal/templates/signup_form.html
+jamfarmportal/templates/user_page.html
