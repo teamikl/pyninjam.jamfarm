@@ -58,52 +58,52 @@ def admin_db_delete(table):
             
     return redirect('/admin/db/dump')
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/signup', methods=['GET', 'POST'])
 def register():
     # XXX: POST ... Bad Request
     if request.method == 'POST':
         email = request.form['email']
         if not is_valid_email(email):
             reason = 'not valid email address'
-            return render_template('register_error.html', reason=reason)
+            return render_template('signup_error.html', reason=reason)
         try:
             user = User(email, password=generate_password())
             db_session.add(user)
             db_session.commit()
         except IntegrityError, e:
             reason = '%s already exists' % escape(email)
-            return render_template('register_error.html', reason=reason)
+            return render_template('signup_error.html', reason=reason)
             
         # Send password to mail
         return redirect('/')
-    return render_template('register_form.html')
+    return render_template('signup_form.html')
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/signin', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         user = User.query.filter_by(email=email, password=password).first()
         if user:
-            session['login'] = user
+            session['user'] = user
             # XXX: url_for("user") raise BuildError
             return redirect("/user")
-    if 'login' in session:
+    if 'user' in session:
         return redirect('/user')
-    return render_template('login_form.html')
+    return render_template('signin_form.html')
 
-@app.route('/logout')
+@app.route('/signout')
 def logout():
-    if 'login' in session:
-        del session['login']
+    if 'user' in session:
+        del session['user']
     return redirect('/')
 
 def require_login(func):
     @functools.wraps(func)
     def _wrapped(*args, **kw):
-        user = session.get('login', None)
+        user = session.get('user', None)
         if not user:
-            return redirect('/login')
+            return redirect('/signin')
         return func(user, *args, **kw)
     return _wrapped
 

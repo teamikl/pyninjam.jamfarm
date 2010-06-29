@@ -8,7 +8,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     email = Column(String(128), unique=True)
     password = Column(String(16), unique=True)
-    # created = Column(DateTime, default=datetime.now())
+    created = Column(DateTime, default=datetime.now())
 
     def __init__(self, email=None, password=None):
         self.email = email

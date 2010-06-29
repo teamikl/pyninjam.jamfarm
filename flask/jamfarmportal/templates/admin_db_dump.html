@@ -20,7 +20,7 @@
   {% endfor %}
   </tbody>
   </table>
-  <input type="submit" value="delete" />
+  {% if users %}<input type="submit" value="delete" />{% endif %}
   </form>
 
   <form action="/admin/db/delete/site" method="post">
@@ -45,6 +45,7 @@
   {% endfor %}
   </tbody>
   </table>
+  {% if sites %}<input type="submit" value="delete" />{% endif %}
   </form>
 
 
