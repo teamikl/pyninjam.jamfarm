@@ -20,7 +20,6 @@ jamfarmportal/templates/admin.html
 jamfarmportal/templates/admin_db.html
 jamfarmportal/templates/base.html
 jamfarmportal/templates/index.html
-jamfarmportal/templates/page_not_found.html
 jamfarmportal/templates/server_list.html
 jamfarmportal/templates/signin_form.html
 jamfarmportal/templates/signup_error.html
