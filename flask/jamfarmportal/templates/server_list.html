@@ -1,8 +1,6 @@
-
-<script src="/static/jamfarm.js" type="text/javascript"></script>
-
 <section id="server_list">
 <h1>Server List</h1>
+{% if server_list %}
 <table>
 <caption>{{ timestamp }}</caption>
 <colgroup style="width:150px">
@@ -31,10 +29,13 @@
 {% endfor %}
 </tbody>
 </table>
-</section>
-
+<script src="/static/jamfarm.js" type="text/javascript"></script>
 <script>
   {% for entry in server_list %}
     get_status("{{ entry.server|escape }}", $("#server_{{ entry.id }}"))
   {% endfor %}
 </script>
+{% else %}
+  <p>no server available</p>
+{% endif %}
+</section>

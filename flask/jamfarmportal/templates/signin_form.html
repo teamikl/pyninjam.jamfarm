@@ -1,8 +1,6 @@
-{% extends "base.html" %}
-
+{% extends "index.html" %}
 {% block title %}Sign in form{% endblock %}
 {% block content %}
-
 <form action="/signin" method="post">
   <fieldset>
   <legend>Sign in</legend>
@@ -18,5 +16,4 @@
     <a href="/signup">Create Account</a>
   </fieldset>
 </form>
-
 {% endblock %}
