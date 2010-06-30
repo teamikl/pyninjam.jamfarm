@@ -2,22 +2,20 @@
 {% block title %}User page{% endblock %}
 {% block header %}
 <h1>User page</h1>
-<h2>Welcome {{ user.email|escape }}</h2>
 <nav>
   <ul>
     <li><a href="/">Home</a>
     <li><a href="/logout">Logout</a>
   </ul>
 </nav>
+<h2>Welcome {{ user.email|escape }}</h2>
 {% endblock %}
+
 {% block content %}
-  
   <section>
-  <h1>My Server entries</h1>
-  
+  <h1>Server List</h1>
   <form action="" method="post">
   <table summary="Server list table">
-  <caption>Server list</caption>
   <thead>
     <tr>
       <th>
@@ -31,13 +29,12 @@
       <td><input type="checkbox" name="server" value="{{ entry.id }}" />
       <td>{{ entry.server|escape }}
       <td>{{ entry.username|escape }} / {{ entry.password|escape }}
-      <td>{{ entry.website }}
-      <td>{{ entry.comment }}
+      <td><a href="{{ entry.website|escape }}">{{ entry.website|escape }}</a>
+      <td>{{ entry.comment|escape }}
   {% endfor %}
   </tbody>
   </table>
   </form>
-  
   </section>
   
   {%include "add_server_form.html" %}

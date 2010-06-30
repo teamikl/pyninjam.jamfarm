@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Not Found{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 {% block content %}
   <h1>ERROR</h1>
-  <h2>{{ error }}</h2>
+  <h2>{{ reason|escape }}</h2>
 {% endblock %}

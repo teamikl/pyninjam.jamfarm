@@ -154,7 +154,7 @@ def get_state(server):
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return render_template('page_not_found.html', error=error)
+    return render_template('error.html', title='Not Found', reason=error)
 
 # tear-down for Database(SQLAlchemy)
 @app.after_request

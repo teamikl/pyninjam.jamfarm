@@ -1,12 +1,10 @@
-{% extends "base.html" %}
-
+{% extends "admin.html" %}
 {% block title %}Admin DB manager{% endblock %}
 {% block content %}
-
-
+  <section>
+  <h1>User table</h1>
   <form action="/admin/db/delete/user" method="post">
   <table>
-  <caption>User</caption>
   <thead>
     <tr>
       <th>
@@ -22,10 +20,12 @@
   </table>
   {% if users %}<input type="submit" value="delete" />{% endif %}
   </form>
+  </section>
 
+  <section>
+  <h1>Site table</h1>
   <form action="/admin/db/delete/site" method="post">
   <table>
-  <caption>Site</caption>
   <thead>
     <tr>
       <th>server
@@ -47,6 +47,6 @@
   </table>
   {% if sites %}<input type="submit" value="delete" />{% endif %}
   </form>
-
-
+  </section>
+  
 {% endblock %}

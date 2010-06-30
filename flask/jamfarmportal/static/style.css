@@ -9,6 +9,9 @@ body {
 
 #header nav ul {
   text-align: right;
+  background-color: #ddddaa;
+  margin: 0px 0px 20px 0px;
+  padding: 2px;
 }
 #header nav li {
   display: inline;
@@ -34,3 +37,9 @@ th {
   background-color: #ddddaa;
   color: white;
 }
+
+#content section {
+  margin-left: 10px;
+  margin-bottom: 20px;
+}
+
