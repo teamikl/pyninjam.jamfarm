@@ -1,0 +1,21 @@
+TODO
+===============
+
+  * EGG
+    * dependency_links
+    * entry_points
+
+  * Document
+    * Docs
+    * API Doc
+    * Markdown or reStructured
+
+  * Tests
+    * UnitTest
+    * Web Test
+
+  * Lib
+    * Flask-OpenID
+    * Flask-Babel
+    * Flask-SQLAlchemy
+    * Flask-WTF (WTForm)
