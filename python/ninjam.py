@@ -15,6 +15,9 @@ import collections
 import logging
 
 
+class InvalidAuthReply(Exception):
+    pass
+
 class InvalidAuthChallengeError(Exception):
     pass
 
@@ -170,7 +173,7 @@ class Ninjam(Connection):
         self.send_auth(username, password, auth.challenge)
 
     def send_auth(self, username, password, challenge):
-        passhash = ninjam.make_passhash(username, password, challenge)
+        passhash = self.make_passhash(username, password, challenge)
         data = passhash + struct.pack('<LL', 1, 0x00020000)
         self.send_msg(Message(NETMSG.CLIENT_AUTH_USER, data))
 
@@ -189,7 +192,7 @@ def get_status(host, port, username, password):
 
         if msg.type == NETMSG.SERVER_AUTH_CHALLENGE:
             auth = Auth.parse(msg.data)
-            ninjam.send_auth(username, password, challenge)
+            ninjam.send_auth(username, password, auth.challenge)
             
         elif msg.type == NETMSG.SERVER_AUTH_REPLY:
             raise InvalidAuthReply()
