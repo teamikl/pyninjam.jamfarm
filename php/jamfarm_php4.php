@@ -111,7 +111,7 @@ function main($host, $port, $username, $password)
 
       if (is_file($cache_file)) {
         $cache_stat = @stat($cache_file);
-        if ($cache_stat && $cache_stat['mtime'] < $cache_expire) {
+        if ($cache_stat && $cache_stat['mtime'] > $cache_expire) {
            $status = unserialize(file_get_contents($cache_file));
         }
       }
