@@ -1,5 +1,7 @@
 <?php
 
+# vim: expandtab tabstop=4 shiftwidth=4
+
 # error_reporting(E_ALL);
 
 function recv_msg($stream)
@@ -60,7 +62,7 @@ function get_ninjam_status($host, $port, $username, $password)
     $socket = @fsockopen($host, $port, $errno, $errstr, 30);
     if (! $socket)
         return array('error' => $errstr);
-    $msg = recv_msg($socket);    
+    $msg = recv_msg($socket);
     if ($msg['type'] != 0x00 || $msg['length'] < 16)
 	return array('error' => 'invalid auth challenge');
 
@@ -99,20 +101,41 @@ function get_ninjam_status($host, $port, $username, $password)
     );
 }
 
-
 function main($host, $port, $username, $password)
 {
-    $status = get_ninjam_status($host, $port, $username, $password);
+    # For PHP4 compatibility
+    # define those function to use cache. PHP manual has samplpe implementations.
+    if (function_exists('file_get_contents') && function_exists('file_put_contents')) {
+      $cache_dir = "./";                             # cache directory
+      $cache_expire = time() + 10;                   # +10 for 10 seconds cache expired time.
+      $cache_file = "${host}_${port}_status.cache";  # cache file, must be unique each host:port.
+
+      if (is_dir($cache_dir)) {
+        $cache_stat = @stat($cache_file);
+        if ($cache_stat && $cache_stat['mtime'] > $cache_expire) {
+           $status = unserialize(file_get_contents($cache_file));
+        }
+      }
+      if (! isset($status)) {
+        $status = get_ninjam_status($host, $port, $username, $password);
+        file_put_contents($cache_file, serialize($status));
+      }
+    }
+    else {
+      # No use cache
+      $status = get_ninjam_status($host, $port, $username, $password);
+    }
+
     if (array_key_exists('error', $status)) {
       echo "<p>", htmlspecialchars($status['error']), "</p>\n";
       return 1;
     }
-   
+
     $bpm = $status['bpm'];
     $bpi = $status['bpi'];
     $topic = htmlspecialchars($status['topic']);
     $count = count($status['users']);
-   
+
     echo "<dl>",
          "<dt>Server</dt><dd>$host:$port</dd>",
          "<dt>Topic</dt><dd>",htmlspecialchars($topic),"</dd>",
@@ -125,7 +148,7 @@ function main($host, $port, $username, $password)
       foreach ($status['users'] as $name => $channels) {
         echo "  <li>", htmlspecialchars($name);
         if (count($channels) > 0) {
-          echo " (", join(", ", array_map(htmlspecialchars, $channels)), ")";
+          echo " (", join(", ", array_map('htmlspecialchars', $channels)), ")";
         }
         echo "</li>\n";
       }
