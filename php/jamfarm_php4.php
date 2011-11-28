@@ -106,12 +106,12 @@ function main($host, $port, $username, $password)
     # For PHP4 compatibility
     # define those function to use cache. PHP manual has samplpe implementations.
     if (function_exists('file_get_contents') && function_exists('file_put_contents')) {
-      $cache_expire = time() + 10;                   # +10 for 10 seconds cache expired time.
+      $cache_expire = time() - 10;                   # -10 for 10 seconds cache expired time.
       $cache_file = "${host}_${port}_status.cache";  # cache file, must be unique each host:port.
 
       if (is_file($cache_file)) {
         $cache_stat = @stat($cache_file);
-        if ($cache_stat && $cache_stat['mtime'] > $cache_expire) {
+        if ($cache_stat && $cache_stat['mtime'] < $cache_expire) {
            $status = unserialize(file_get_contents($cache_file));
         }
       }
