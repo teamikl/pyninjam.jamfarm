@@ -101,6 +101,11 @@ function get_ninjam_status($host, $port, $username, $password)
     );
 }
 
+function _htmlspecialchars($text)
+{
+    return htmlspecialchars($text, ENT_QUOTES, 'SJIS');
+}
+
 function main($host, $port, $username, $password)
 {
     # For PHP4 compatibility
@@ -126,18 +131,18 @@ function main($host, $port, $username, $password)
     }
 
     if (array_key_exists('error', $status)) {
-      echo "<p>", htmlspecialchars($status['error']), "</p>\n";
+      echo "<p>", _htmlspecialchars($status['error']), "</p>\n";
       return 1;
     }
 
     $bpm = $status['bpm'];
     $bpi = $status['bpi'];
-    $topic = htmlspecialchars($status['topic']);
+    $topic = _htmlspecialchars($status['topic']);
     $count = count($status['users']);
 
     echo "<dl>",
          "<dt>Server</dt><dd>$host:$port</dd>",
-         "<dt>Topic</dt><dd>",htmlspecialchars($topic),"</dd>",
+         "<dt>Topic</dt><dd>",_htmlspecialchars($topic),"</dd>",
          "<dt>BPM</dt><dd>$bpm</dd>",
          "<dt>BPI</dt><dd>$bpi</dd>",
          "</dl>\n";
@@ -145,9 +150,9 @@ function main($host, $port, $username, $password)
     if ($count > 0) {
       echo "<ul>\n";
       foreach ($status['users'] as $name => $channels) {
-        echo "  <li>", htmlspecialchars($name);
+        echo "  <li>", _htmlspecialchars($name);
         if (count($channels) > 0) {
-          echo " (", join(", ", array_map('htmlspecialchars', $channels)), ")";
+          echo " (", join(", ", array_map('_htmlspecialchars', $channels)), ")";
         }
         echo "</li>\n";
       }
